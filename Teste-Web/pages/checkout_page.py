@@ -19,26 +19,39 @@ class CheckoutStepOnePage(BasePage):
         texto_atual = self.get_text(self._PAGE_TITLE)
         return "Checkout: Your Information" in texto_atual.strip()
 
-    def fill_customer_info(self, first_name: str, last_name: str, postal_code: str):
-        for locator, value in [
-            (self._FIRST_NAME, first_name),
-            (self._LAST_NAME, last_name),
-            (self._POSTAL_CODE, postal_code),
-        ]:
-            field = WebDriverWait(self.driver, 10).until(
-                EC.element_to_be_clickable(locator)
-            )
-            field.clear()
-            field.click()
-            field.send_keys(value)
+    def _fill_field(self, locator, value: str):
+        field = WebDriverWait(self.driver, 10).until(
+            EC.element_to_be_clickable(locator)
+        )
+        # Limpa e preenche via JavaScript para evitar problemas com caracteres especiais
+        self.driver.execute_script(
+            "arguments[0].value = ''; arguments[0].dispatchEvent(new Event('input'));",
+            field
+        )
+        self.driver.execute_script(
+            "arguments[0].focus();",
+            field
+        )
+        field.send_keys(value)
 
-            # Valida que o valor foi realmente inserido no campo
-            actual = field.get_attribute("value")
-            if actual != value:
-                raise AssertionError(
-                    f"Campo {locator} não foi preenchido corretamente. "
-                    f"Esperado: '{value}', obtido: '{actual}'"
-                )
+        # Dispara eventos que frameworks como React/Vue precisam para detectar a mudança
+        self.driver.execute_script(
+            "arguments[0].dispatchEvent(new Event('input', {bubbles: true}));"
+            "arguments[0].dispatchEvent(new Event('change', {bubbles: true}));",
+            field
+        )
+
+        actual = field.get_attribute("value")
+        if actual != value:
+            raise AssertionError(
+                f"Falha ao preencher '{locator}'. "
+                f"Esperado: '{value}', obtido: '{actual}'"
+            )
+
+    def fill_customer_info(self, first_name: str, last_name: str, postal_code: str):
+        self._fill_field(self._FIRST_NAME, first_name)
+        self._fill_field(self._LAST_NAME, last_name)
+        self._fill_field(self._POSTAL_CODE, postal_code)
 
     def continue_to_overview(self):
         btn = WebDriverWait(self.driver, 10).until(
@@ -46,7 +59,6 @@ class CheckoutStepOnePage(BasePage):
         )
         self.driver.execute_script("arguments[0].click();", btn)
 
-        # Verifica se apareceu mensagem de erro de validação do formulário
         try:
             error = WebDriverWait(self.driver, 3).until(
                 EC.visibility_of_element_located(self._ERROR_MESSAGE)
@@ -55,7 +67,7 @@ class CheckoutStepOnePage(BasePage):
         except AssertionError:
             raise
         except Exception:
-            pass  # Nenhum erro encontrado, segue normalmente
+            pass
 
         WebDriverWait(self.driver, 10).until(
             EC.url_contains("checkout-step-two.html")
@@ -93,8 +105,4 @@ class CheckoutStepTwoPage(BasePage):
 class CheckoutCompletePage(BasePage):
     _COMPLETE_HEADER = (By.CLASS_NAME, "complete-header")
 
-    def get_confirmation_message(self) -> str:
-        WebDriverWait(self.driver, 10).until(
-            EC.visibility_of_element_located(self._COMPLETE_HEADER)
-        )
-        return self.get_text(self._COMPLETE_HEADER)
+    def get_confirmation_message(s
