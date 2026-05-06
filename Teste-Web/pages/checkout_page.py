@@ -23,24 +23,17 @@ class CheckoutStepOnePage(BasePage):
         field = WebDriverWait(self.driver, 10).until(
             EC.element_to_be_clickable(locator)
         )
-        # Limpa e preenche via JavaScript para evitar problemas com caracteres especiais
         self.driver.execute_script(
             "arguments[0].value = ''; arguments[0].dispatchEvent(new Event('input'));",
             field
         )
-        self.driver.execute_script(
-            "arguments[0].focus();",
-            field
-        )
+        self.driver.execute_script("arguments[0].focus();", field)
         field.send_keys(value)
-
-        # Dispara eventos que frameworks como React/Vue precisam para detectar a mudança
         self.driver.execute_script(
             "arguments[0].dispatchEvent(new Event('input', {bubbles: true}));"
             "arguments[0].dispatchEvent(new Event('change', {bubbles: true}));",
             field
         )
-
         actual = field.get_attribute("value")
         if actual != value:
             raise AssertionError(
@@ -58,7 +51,6 @@ class CheckoutStepOnePage(BasePage):
             EC.element_to_be_clickable(self._CONTINUE_BUTTON)
         )
         self.driver.execute_script("arguments[0].click();", btn)
-
         try:
             error = WebDriverWait(self.driver, 3).until(
                 EC.visibility_of_element_located(self._ERROR_MESSAGE)
@@ -68,7 +60,6 @@ class CheckoutStepOnePage(BasePage):
             raise
         except Exception:
             pass
-
         WebDriverWait(self.driver, 10).until(
             EC.url_contains("checkout-step-two.html")
         )
@@ -96,7 +87,6 @@ class CheckoutStepTwoPage(BasePage):
             EC.element_to_be_clickable(self._FINISH_BUTTON)
         )
         self.driver.execute_script("arguments[0].click();", btn)
-
         WebDriverWait(self.driver, 10).until(
             EC.url_contains("checkout-complete.html")
         )
@@ -105,4 +95,8 @@ class CheckoutStepTwoPage(BasePage):
 class CheckoutCompletePage(BasePage):
     _COMPLETE_HEADER = (By.CLASS_NAME, "complete-header")
 
-    def get_confirmation_message(s
+    def get_confirmation_message(self) -> str:
+        WebDriverWait(self.driver, 10).until(
+            EC.visibility_of_element_located(self._COMPLETE_HEADER)
+        )
+        return self.get_text(self._COMPLETE_HEADER)
