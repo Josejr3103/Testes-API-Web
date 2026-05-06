@@ -23,7 +23,7 @@ class CheckoutStepOnePage(BasePage):
         field = WebDriverWait(self.driver, 10).until(
             EC.element_to_be_clickable(locator)
         )
-        # Injeta o valor inteiro via JS, sem send_keys (evita problema com Unicode no headless)
+        
         self.driver.execute_script("""
             var el = arguments[0];
             var val = arguments[1];

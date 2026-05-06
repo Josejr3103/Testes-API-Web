@@ -15,7 +15,6 @@ class InventoryPage(BasePage):
         return self.get_text(self._PAGE_TITLE) == "Products"
 
     def add_products_to_cart(self, count: int = 2):
-        # Aguarda os botões estarem clicáveis antes de interagir
         buttons = WebDriverWait(self.driver, 10).until(
             EC.presence_of_all_elements_located(self._ADD_TO_CART_BUTTONS)
         )
