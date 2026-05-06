@@ -20,17 +20,25 @@ class CheckoutStepOnePage(BasePage):
         return "Checkout: Your Information" in texto_atual.strip()
 
     def fill_customer_info(self, first_name: str, last_name: str, postal_code: str):
-        # Aguarda cada campo estar visível e interagível antes de digitar
-        for locator, value in [
-            (self._FIRST_NAME, first_name),
-            (self._LAST_NAME, last_name),
-            (self._POSTAL_CODE, postal_code),
-        ]:
-            field = WebDriverWait(self.driver, 10).until(
-                EC.element_to_be_clickable(locator)
+    for locator, value in [
+        (self._FIRST_NAME, first_name),
+        (self._LAST_NAME, last_name),
+        (self._POSTAL_CODE, postal_code),
+    ]:
+        field = WebDriverWait(self.driver, 10).until(
+            EC.element_to_be_clickable(locator)
+        )
+        field.clear()
+        field.click()
+        field.send_keys(value)
+
+        # Valida que o valor foi realmente inserido no campo
+        actual = field.get_attribute("value")
+        if actual != value:
+            raise AssertionError(
+                f"Campo {locator} não foi preenchido corretamente. "
+                f"Esperado: '{value}', obtido: '{actual}'"
             )
-            field.clear()
-            field.send_keys(value)
 
     def continue_to_overview(self):
         btn = WebDriverWait(self.driver, 10).until(
