@@ -23,17 +23,18 @@ class CheckoutStepOnePage(BasePage):
         field = WebDriverWait(self.driver, 10).until(
             EC.element_to_be_clickable(locator)
         )
-        self.driver.execute_script(
-            "arguments[0].value = ''; arguments[0].dispatchEvent(new Event('input'));",
-            field
-        )
-        self.driver.execute_script("arguments[0].focus();", field)
-        field.send_keys(value)
-        self.driver.execute_script(
-            "arguments[0].dispatchEvent(new Event('input', {bubbles: true}));"
-            "arguments[0].dispatchEvent(new Event('change', {bubbles: true}));",
-            field
-        )
+        # Injeta o valor inteiro via JS, sem send_keys (evita problema com Unicode no headless)
+        self.driver.execute_script("""
+            var el = arguments[0];
+            var val = arguments[1];
+            var nativeInputSetter = Object.getOwnPropertyDescriptor(
+                window.HTMLInputElement.prototype, 'value'
+            ).set;
+            nativeInputSetter.call(el, val);
+            el.dispatchEvent(new Event('input', {bubbles: true}));
+            el.dispatchEvent(new Event('change', {bubbles: true}));
+        """, field, value)
+
         actual = field.get_attribute("value")
         if actual != value:
             raise AssertionError(
